@@ -1,20 +1,21 @@
 # project-docs
 
 Human-readable project memory for the repos under `~/src`. One self-contained
-`{project}.html` per project; this page indexes them.
+`{project}.html` per project, with a dashboard at `index.html`.
 
 Each doc covers: **why** the project exists (problem statement), its name, features,
 a quick architecture overview, problems still to solve, and features the user has
 asked for that are still pending.
 
-> GitHub shows `.html` as source, so the **View** links below open the rendered page
-> via htmlpreview. Use **Source** to read/edit the file in the repo.
+> **📂 Dashboard:** open <file:///Users/px0/src/project-docs/index.html> locally
+> (the rich landing page with working links). GitHub renders `.html` as source, so
+> the table below is the in-browser index.
 
 ## Projects
 
-| Project | Status | Doc |
-|---------|--------|-----|
-| **iStorePull** — `ipatool` without auth | 🔵 Released (v0.1.0) | [View](https://htmlpreview.github.io/?https://github.com/pixel0verflow/project-docs/blob/main/istorepull.html) · [Source](istorepull.html) |
+| Project | Status | Doc (open locally) |
+|---------|--------|--------------------|
+| **iStorePull** — `ipatool` without auth | 🔵 Released (v0.1.0) | <file:///Users/px0/src/project-docs/istorepull.html> |
 
 ---
 
