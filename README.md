@@ -14,7 +14,7 @@ asked for that are still pending.
 
 | Project | Status | Doc |
 |---------|--------|-----|
-| _none yet_ | | |
+| **iStorePull** — `ipatool` without auth | 🔵 Released (v0.1.0) | [View](https://htmlpreview.github.io/?https://github.com/pixel0verflow/project-docs/blob/main/istorepull.html) · [Source](istorepull.html) |
 
 ---
 

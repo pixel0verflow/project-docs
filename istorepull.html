@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iStorePull — project doc</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         max-width: 860px; margin: 2rem auto; padding: 0 1.2rem; color: #1b1b1b; background: #fff; }
+  @media (prefers-color-scheme: dark) { body { color: #e6e6e6; background: #1a1a1a; } code, pre { background: #2a2a2a; } th { background:#2a2a2a; } }
+  h1 { font-size: 2rem; margin-bottom: 0; }
+  .tagline { color: #777; margin-top: .2rem; }
+  h2 { margin-top: 2rem; padding-bottom: .3rem; border-bottom: 1px solid #8884; }
+  code, pre { background: #f4f4f4; border-radius: 4px; }
+  code { padding: .1rem .35rem; font-size: .9em; }
+  pre { padding: .8rem 1rem; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: .5rem 0; }
+  th, td { border: 1px solid #8884; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f4f4f4; }
+  .status { font-weight: 600; }
+  .done { color: #2e7d32; } .pending { color: #b26a00; } .blocked { color: #c62828; }
+  ul { margin: .4rem 0; }
+  footer { margin-top: 3rem; color: #888; font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<h1>iStorePull</h1>
+<p class="tagline"><code>ipatool</code> without authentication · <span class="status">🟢 Active / 🔵 Released v0.1.0</span></p>
+<p>Repo: <a href="https://github.com/pixel0verflow/iStorePull">github.com/pixel0verflow/iStorePull</a></p>
+
+<h2>1. Problem statement — why?</h2>
+<p>
+The App Store only ever offers an app's <strong>latest</strong> build, yet Apple still
+serves older builds an account has been entitled to. Pulling them normally requires a
+tool like <code>ipatool</code> — but Apple's login (GrandSlam SRP + FairPlay-SAP token
+minting) needs Apple's private key material and <strong>cannot be reproduced by third
+parties</strong>; the legacy password-auth endpoint was retired mid-2026.
+</p>
+<p>
+iStorePull sidesteps login entirely: the user supplies a <strong>real session captured
+from Apple Configurator</strong>, and the tool replays the well-understood store
+endpoints to list versions and download IPAs. The hard, fragile part (auth) is done by
+Apple's own signed software; iStorePull only borrows the resulting token.
+</p>
+
+<h2>2. Features</h2>
+<ul>
+  <li><strong><code>capture</code></strong> — embedded selective-MITM proxy auto-extracts the
+      session from a Configurator download. Decrypts only the store hosts; tunnels pinned
+      <code>gsa.apple.com</code> untouched. One admin prompt; auto teardown. (macOS)</li>
+  <li><strong><code>token import</code></strong> — manual path: <code>--charles</code> (.chlz),
+      <code>--har</code>, or <code>--paste</code> raw headers. Cross-platform.</li>
+  <li><strong><code>lookup</code> / <code>search</code></strong> — public iTunes API, no creds.</li>
+  <li><strong><code>versions</code></strong> — lists builds; resolves newest N to version
+      strings by default; <code>--all</code> for raw ids; persistent id↔version cache with
+      <code>--clear-cache</code>.</li>
+  <li><strong><code>download</code></strong> — current, <code>--version-id</code>, or
+      <code>--version</code> (binary-searched). Streams from CDN, verifies md5, injects sinf +
+      <code>iTunesMetadata.plist</code>, writes an installable <code>.ipa</code>.</li>
+  <li>Released via GoReleaser: GitHub binaries (macOS universal, Linux/Windows amd64+arm64) +
+      Homebrew cask (<code>pixel0verflow/homebrew-tap</code>). CI + Dependabot.</li>
+</ul>
+
+<h2>3. Architecture overview</h2>
+<p>Pure Go, no cgo, single static binary. Dependencies point strictly downward; each package
+compiles and tests standalone.</p>
+<pre>.chlz/.har/paste ─▶ charles ─▶ Session ─▶ store (replay MZFinance) ─▶ DownloadItem ─▶ ipa ─▶ .ipa
+  capture (MITM) ──────────────┘            ▲
+                          credential     httpx (cookie jar, pod re-POST, plist)
+  itunes (public lookup/search) ─▶ adamId</pre>
+<table>
+  <tr><th>Package</th><th>Responsibility</th></tr>
+  <tr><td><code>pkg/credential</code></td><td>Session model + on-disk store (<code>~/.istorepull/session.json</code>, 0600)</td></tr>
+  <tr><td><code>pkg/charles</code></td><td>.chlz / .har / pasted-headers / live request → Session</td></tr>
+  <tr><td><code>pkg/capture</code></td><td>ephemeral CA, selective-MITM CONNECT proxy, darwin keychain/proxy integration</td></tr>
+  <tr><td><code>pkg/httpx</code></td><td>store HTTP transport: cookie jar, pod re-POST (preserves body), plist codec</td></tr>
+  <tr><td><code>pkg/store</code></td><td>MZFinance replay: DownloadProduct, Versions, binary-search FindExternalID, typed errors</td></tr>
+  <tr><td><code>pkg/itunes</code></td><td>public iTunes lookup/search</td></tr>
+  <tr><td><code>pkg/ipa</code></td><td>IPA assembly: sinf injection + iTunesMetadata</td></tr>
+  <tr><td><code>cmd</code></td><td>cobra CLI + id↔version cache (vermap)</td></tr>
+</table>
+
+<h2>4. Problems to solve / known limitations</h2>
+<table>
+  <tr><th>Item</th><th>Notes</th></tr>
+  <tr><td class="blocked">Auth is unreproducible</td><td>The core wall. Capture is required because login (GrandSlam SRP + SAP token mint) can't be forged. A real attempt to crack/reproduce auth is <strong>deferred</strong>.</td></tr>
+  <tr><td>capture is macOS-only</td><td>Keychain trust + <code>networksetup</code> are darwin. Manual <code>token import</code> works cross-platform.</td></tr>
+  <tr><td>Token expiry</td><td>X-Token is session-scoped; expires → re-run <code>capture</code>. Detected via failureType 2042/2034.</td></tr>
+  <tr><td>iTunes 12.6.5.3 route rejected</td><td>Considered as a Windows/alt capture source; <strong>rejected</strong> — too fragile, relies on old auth endpoints Apple is deprecating.</td></tr>
+  <tr><td>Music/song token untested</td><td>An X-Token from a Music redownload might carry over, but storefront-kind/endpoint mismatch likely rejects an app download. Unverified.</td></tr>
+  <tr><td>FindExternalID has no throttle</td><td>Binary search is ~8 probes so 429 is unlikely; could add a small delay if it bites.</td></tr>
+  <tr><td>Historical builds GC'd</td><td>A listed externalVersionId may 404/410 — Apple garbage-collects old assets.</td></tr>
+</table>
+
+<h2>5. Pending features (requested in conversation)</h2>
+<p>Agent-friendliness work, scoped but not yet built:</p>
+<table>
+  <tr><th>Feature</th><th>Status</th></tr>
+  <tr><td>Binary-search version resolution</td><td class="done">done</td></tr>
+  <tr><td>Persistent id↔version cache + <code>--clear-cache</code></td><td class="done">done</td></tr>
+  <tr><td>Capture admin-prompt explanation / terse status lines</td><td class="done">done</td></tr>
+  <tr><td><strong>Tier 1:</strong> global <code>--json</code> output + non-TTY hygiene (<code>--quiet</code>, progress→stderr)</td><td class="pending">pending</td></tr>
+  <tr><td><strong>Tier 1:</strong> <code>token verify</code> — live cheap probe → machine-readable validity</td><td class="pending">pending</td></tr>
+  <tr><td><strong>Tier 2:</strong> <code>istorepull mcp</code> — stdio MCP server (lookup/search/versions/download/token_status)</td><td class="pending">pending</td></tr>
+  <tr><td><strong>Tier 3:</strong> capture ergonomics — curl/raw-request import, structured <code>needs_capture</code> handoff</td><td class="pending">pending</td></tr>
+  <tr><td><strong>Later:</strong> attempt to crack/reproduce Apple auth (remove capture requirement)</td><td class="pending">deferred</td></tr>
+</table>
+
+<footer>Human-readable project memory. Update after each task. Last updated: 2026-06-11.</footer>
+
+</body>
+</html>
