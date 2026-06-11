@@ -14,7 +14,8 @@ asked for that are still pending.
 
 | Project | Status | Doc |
 |---------|--------|-----|
-| **iStorePull** — `ipatool` without auth | 🔵 Released (v0.1.0) | [open](https://pixel0verflow.github.io/project-docs/istorepull.html) |
+| **iStorePull** — `ipatool` without auth | 🔵 Released (v0.2.1) | [open](https://pixel0verflow.github.io/project-docs/istorepull.html) |
+| **finbrake** — fund-load velocity limiter | 🔵 Complete | [open](https://pixel0verflow.github.io/project-docs/finbrake.html) |
 
 ---
 

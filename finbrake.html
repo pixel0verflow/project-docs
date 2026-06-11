@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>finbrake — project doc</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         max-width: 860px; margin: 2rem auto; padding: 0 1.2rem; color: #1b1b1b; background: #fff; }
+  @media (prefers-color-scheme: dark) { body { color: #e6e6e6; background: #1a1a1a; } code, pre { background: #2a2a2a; } th { background:#2a2a2a; } }
+  h1 { font-size: 2rem; margin-bottom: 0; }
+  .tagline { color: #777; margin-top: .2rem; }
+  h2 { margin-top: 2rem; padding-bottom: .3rem; border-bottom: 1px solid #8884; }
+  code, pre { background: #f4f4f4; border-radius: 4px; }
+  code { padding: .1rem .35rem; font-size: .9em; }
+  pre { padding: .8rem 1rem; overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: .5rem 0; }
+  th, td { border: 1px solid #8884; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f4f4f4; }
+  .status { font-weight: 600; }
+  .done { color: #2e7d32; } .pending { color: #b26a00; }
+  ul { margin: .4rem 0; }
+  footer { margin-top: 3rem; color: #888; font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<h1>finbrake</h1>
+<p class="tagline">Per-customer fund-load velocity limiter · <span class="status">🔵 Complete (take-home)</span></p>
+
+<h2>1. Problem statement — why?</h2>
+<p>
+A service must decide, in real time, whether to <strong>accept or decline</strong> a customer's
+attempt to load funds, enforcing per-customer <strong>velocity limits</strong>. Built as a
+take-home exercise; the goal was a clean, well-tested implementation of the rules below with a
+maintainable architecture.
+</p>
+<p><strong>Velocity rules</strong> (per customer):</p>
+<ul>
+  <li>max <strong>$5,000</strong> loaded per UTC day</li>
+  <li>max <strong>$20,000</strong> loaded per ISO week (Mon 00:00 UTC → next Mon)</li>
+  <li>max <strong>3</strong> loads per UTC day, regardless of amount</li>
+</ul>
+<p>Declined attempts don't consume budget. Repeated <code>(customer_id, id)</code> pairs are
+silently ignored after the first occurrence (idempotency).</p>
+
+<h2>2. Features</h2>
+<ul>
+  <li><strong>REST mode</strong> (default): <code>POST /load-attempts</code> → 200 with decision,
+      204 for duplicates, 400 for malformed input.</li>
+  <li><strong>CLI mode</strong>: <code>CommandLineRunner</code> gated on <code>finbrake.input</code>,
+      replays a fixture file to stdout/file.</li>
+  <li>Three velocity rules with accepted-only window aggregation.</li>
+  <li>Full audit trail — both accepted and declined attempts persisted; window queries filter
+      to <code>accepted=true</code>.</li>
+  <li>DB-level dedup via composite uniqueness on <code>(customer_id, attempt_id)</code>.</li>
+</ul>
+
+<h2>3. Architecture overview</h2>
+<p><strong>Ports &amp; adapters (hexagonal).</strong> Spring Boot 4 on Java 25 (Jackson 3).
+Domain is pure Java with no framework deps; Spring concerns live only at the application/adapter
+boundary.</p>
+<pre>adapter/in (web, cli) ──▶ application (port.in)
+                               │
+                               ▼
+                        application service ──▶ domain (LoadAttempt, VelocityPolicy, TimeWindows)
+                               │
+                               ▼
+                        application (port.out) ◀── adapter/out (JPA persistence)</pre>
+<table>
+  <tr><th>Layer</th><th>Contents</th></tr>
+  <tr><td><code>domain</code></td><td>LoadAttempt, LoadDecision, VelocityPolicy (static rules), TimeWindows (UTC day / ISO week)</td></tr>
+  <tr><td><code>application</code></td><td>LoadAttemptService + inbound port ProcessLoadAttempt + outbound port LoadAttemptStore</td></tr>
+  <tr><td><code>adapter/in</code></td><td>REST controller + DTOs + exception handler; CLI file runner</td></tr>
+  <tr><td><code>adapter/out</code></td><td>JPA entity + Spring Data repo + store adapter (H2 in-memory)</td></tr>
+</table>
+<p><strong>Service flow:</strong> dedup check → compute daily-amount / daily-count / weekly-amount
+(accepted only) → <code>VelocityPolicy.accepts(...)</code> → persist → return decision.</p>
+<p><strong>Quality gates:</strong> Spotless (Palantir format), Error Prone (main only), SpotBugs
+(MAX/HIGH), all wired into <code>./gradlew check</code>. Tests span pure-unit (policy, time
+windows), service-with-fake-store, <code>@DataJpaTest</code> slice, <code>@WebMvcTest</code> slice,
+and <code>@SpringBootTest</code> fixture-parity.</p>
+
+<h2>4. Problems to solve / known limitations</h2>
+<table>
+  <tr><th>Item</th><th>Notes</th></tr>
+  <tr><td>In-memory persistence</td><td>H2 with <code>ddl-auto=create-drop</code>; no durable store. Swappable by a new <code>LoadAttemptStore</code> impl (the point of the hexagonal design).</td></tr>
+  <tr><td>Single-node concurrency</td><td>Window aggregates + insert aren't transactionally isolated against concurrent attempts for the same customer; under true concurrency two requests could both read budget then both accept. DB unique constraint guards dedup, not the velocity race. Would need row locking / serialized per-customer processing for production.</td></tr>
+  <tr><td>Money as primitive</td><td>Amounts parsed from <code>$</code>-prefixed strings; fine for the exercise, a dedicated Money type would harden it.</td></tr>
+</table>
+
+<h2>5. Pending features (requested in conversation)</h2>
+<p class="pending">None recorded yet.</p>
+
+<footer>Human-readable project memory. Update after each task. Last updated: 2026-06-11.</footer>
+
+</body>
+</html>
