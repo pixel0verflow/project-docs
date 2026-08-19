@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>work-work-orc — project doc</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>work-work-orc</h1>
+<p class="tagline">Autonomous Claude Code orchestration — spec in, PRs out · <span class="status">🟢 Active (research phase)</span></p>
+
+<h2>1. Problem statement — why?</h2>
+<p>
+Complex projects stall on operator availability: every turn of agent work needs a human at the
+prompt. The goal is a rig where a <strong>specification written before the work starts</strong> is
+enough for Claude Code to work continuously — overnight, or around the clock — with no interactive
+input, producing reviewable pull requests instead of an unreviewable pile of commits.
+</p>
+<p>
+The unsolved part is not the loop (Claude Code now ships several). It's making <em>"done"</em>
+machine-checkable, keeping the agent inside its scope, and making sure a 3am stall is noticed.
+</p>
+
+<h2>2. Features</h2>
+<p>Research phase — nothing built yet. The findings set (in-repo, not published here) covers:</p>
+<ul>
+  <li><strong>Capability map</strong> — every native Claude Code mechanism for unattended work:
+      headless <code>-p</code>, <code>/goal</code>, <code>Stop</code>/<code>StopFailure</code> hooks,
+      background agents and the supervisor daemon, <code>/loop</code> + cron tools, cloud routines,
+      desktop scheduled tasks, dynamic workflows, agent teams, sandboxing tiers, auto mode.</li>
+  <li><strong>Ecosystem patterns</strong> — the Ralph loop and what it teaches (the filesystem is
+      the memory), spec-driven development and its documented drift modes, third-party harnesses
+      worth reading before writing one.</li>
+  <li><strong>Proposed architecture</strong> — one task = one fresh session = one worktree = one PR,
+      gated by a verifier script the human wrote.</li>
+  <li><strong>Guardrails, cost and failure modes</strong> — usage-window math, deny lists,
+      isolation ladder, and the failure table every source converges on.</li>
+  <li><strong>Remote operation</strong> — driving and monitoring the rig from a phone.</li>
+</ul>
+
+<h2>3. Architecture overview</h2>
+<p><strong>Spec → queue → worker → gate.</strong> State lives on disk so any session can rehydrate
+from a cold start; context is deliberately short-lived.</p>
+<pre>spec/ (human-written, once)
+  charter + architecture + tasks.yaml + criteria/&lt;task&gt;.sh
+        │
+        ▼
+supervisor  ──picks next unblocked task──▶  claude -p --worktree "/goal &lt;criteria&gt; or stop after N turns"
+        ▲                                          │
+        │                                   Stop hook runs criteria script
+        │                                          │
+        └──── pass: commit → branch → PR ──────────┤
+              fail: journal + backoff, break after 3
+                                                   ▼
+                                    state/ progress · journal · QUESTIONS · BLOCKED</pre>
+<table>
+  <tr><th>Piece</th><th>Role</th></tr>
+  <tr><td><code>spec/criteria/*.sh</code></td><td>The only definition of done that counts. Exit 0 = task complete. Human-authored so the agent can't grade its own homework.</td></tr>
+  <tr><td><code>/goal</code></td><td>Native turn-after-turn loop; a Haiku evaluator judges the condition from the transcript. Cheap second opinion on top of the script.</td></tr>
+  <tr><td><code>Stop</code> hook</td><td>Deterministic gate: runs the criteria script, feeds failures back as the next prompt.</td></tr>
+  <tr><td><code>StopFailure</code> hook</td><td>Night watchman: rate limit / auth / billing errors write <code>BLOCKED.md</code> and notify.</td></tr>
+  <tr><td>git worktree per task</td><td>File isolation, so parallel or failed tasks never contaminate each other.</td></tr>
+  <tr><td><code>QUESTIONS.md</code></td><td>Judgement calls get parked, not guessed. The agent moves to the next unblocked task.</td></tr>
+</table>
+
+<h2>4. Problems to solve / known limitations</h2>
+<table>
+  <tr><th>Item</th><th>Notes</th></tr>
+  <tr><td>Verification is the ceiling</td><td>Every source agrees: autonomy scales with verification quality, not loop cleverness. A project without a trustworthy test suite can't be automated this way — the first build step is the verifier, not the loop.</td></tr>
+  <tr><td>Usage windows, not dollars</td><td>Subscription plans meter on rolling 5-hour and weekly windows shared with chat; parallel sessions multiply consumption roughly linearly. Hard dollar caps (<code>--max-budget-usd</code>) require API-key billing.</td></tr>
+  <tr><td>Billing vs remote control</td><td>Phone steering (Remote Control, cloud sessions) needs subscription login; hard spend caps need an API key. Likely answer is two environments on one machine.</td></tr>
+  <tr><td>Prose is advisory</td><td>Memory files and spec text are followed probabilistically. Anything that must hold has to be a hook or a deny rule.</td></tr>
+  <tr><td>Spec drift undetected</td><td>No tool in the category ships spec-vs-code drift detection; a periodic re-check of acceptance criteria against HEAD has to be written.</td></tr>
+  <tr><td>Local scheduling is fragile</td><td>Session-scoped tasks expire after 7 days, die with the terminal, and never catch up missed fires. Durable scheduling means the background daemon, desktop tasks, cloud routines, or CI.</td></tr>
+</table>
+
+<h2>5. Pending features (requested in conversation)</h2>
+<ul>
+  <li>Decide execution surface: laptop, always-on box in a container, or cloud routines.</li>
+  <li>Decide billing surface and whether both can coexist on one machine.</li>
+  <li>Pick the first real project to drive with the rig, and assess whether its test suite is worth gating on.</li>
+  <li>Agree the git autonomy boundary: agent pushes only <code>agent/&lt;task-id&gt;</code> branches and opens draft PRs; never <code>main</code>, never merges.</li>
+  <li>Build order once decided: spec skeleton → verifier hooks → single-task runner → supervisor → one overnight window.</li>
+</ul>
+
+<footer>Human-readable project memory. Update after each task. Last updated: 2026-08-19.</footer>
+
+</body>
+</html>

@@ -17,6 +17,7 @@ asked for that are still pending.
 | **iStorePull** — `ipatool` without auth | 🔵 Released (v0.2.1) | [open](https://pixel0verflow.github.io/project-docs/istorepull.html) |
 | **finbrake** — fund-load velocity limiter | 🔵 Complete | [open](https://pixel0verflow.github.io/project-docs/finbrake.html) |
 | **Specula** — visionOS video player | 🟢 Active | 🔒 private — doc lives in the project repo |
+| **work-work-orc** — autonomous Claude Code orchestration | 🟢 Active (research) | [open](https://pixel0verflow.github.io/project-docs/work-work-orc.html) |
 
 ---
 
