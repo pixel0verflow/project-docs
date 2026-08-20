@@ -18,7 +18,7 @@ asked for that are still pending.
 | **finbrake** — fund-load velocity limiter | 🔵 Complete | [open](https://pixel0verflow.github.io/project-docs/finbrake.html) |
 | **Specula** — visionOS video player | 🟢 Active | 🔒 private — doc lives in the project repo |
 | **work-work-orc** — autonomous Claude Code orchestration | 🟢 Active (research) | [open](https://pixel0verflow.github.io/project-docs/work-work-orc.html) |
-| **Peonmaxxer** — self-hosted orchestrator for unattended AI coding agents | 🟢 Active (spec phase) | 🔒 private — doc lives in the project repo |
+| **Peonmaxxer** — self-hosted orchestrator for unattended AI coding agents | 🟢 Active (M0 skeleton) | 🔒 private — doc lives in the project repo |
 
 ---
 
