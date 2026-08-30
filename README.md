@@ -19,6 +19,7 @@ asked for that are still pending.
 | **Specula** — visionOS video player | 🟢 Active | 🔒 private — doc lives in the project repo |
 | **work-work-orc** — autonomous Claude Code orchestration | 🟢 Active (research) | [open](https://pixel0verflow.github.io/project-docs/work-work-orc.html) |
 | **Peonmaxxer** — self-hosted orchestrator for unattended AI coding agents | 🟢 Active (v0 built, hardening) | 🔒 private — doc lives in the project repo |
+| [peonmaxxer-testing-facility](https://pixel0verflow.github.io/project-docs/peonmaxxer-testing-facility.html) | Model benchmark harness for peonmaxxer — 3 fixed tasks, per-model runs, PR-line stats | active |
 
 ---
 

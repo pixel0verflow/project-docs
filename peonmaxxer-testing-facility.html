@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>peonmaxxer-testing-facility</title>
+<style>body{font-family:system-ui,sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem;line-height:1.5}h1,h2{line-height:1.2}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:.4rem .6rem;text-align:left}code{background:#f4f4f4;padding:.1rem .3rem;border-radius:3px}</style>
+</head>
+<body>
+<h1>peonmaxxer-testing-facility</h1>
+<p><a href="https://github.com/pixel0verflow/peonmaxxer-testing-facility">github.com/pixel0verflow/peonmaxxer-testing-facility</a> · public</p>
+
+<h2>1. Problem statement — why?</h2>
+<p>peonmaxxer runs coding agents unattended, but "which model is worth
+running?" was answered by anecdote. This facility turns it into a
+repeatable benchmark: three fixed tasks, one command per model per run,
+every result a PR whose first line states model, API-vs-local (with
+machine specs when local), harness, wall-clock time and token totals —
+comparable at a glance across models.</p>
+
+<h2>2. Features</h2>
+<ul>
+<li><strong>Three benchmark tasks</strong> under <code>src/benchmark/</code>:
+<em>task1</em> RecurKit (Swift) — find &amp; fix a planted bug from a user report,
+with <strong>no shipped test for it</strong> (the model writes the reproducing check;
+suite is a framework-free runner so bare Command Line Tools suffice);
+<em>task2</em> logstat (Rust, std-only) — implement a spec'd log-analysis CLI
+against byte-exact goldens; <em>task3</em> pricing-site (Svelte 5 + Vite) —
+build a product site around a test-pinned pricing engine (marginal
+volume tiers, annual discount, half-up rounding). All three contracts
+proven satisfiable by throwaway reference implementations before landing.</li>
+<li><strong>Per-model run generator</strong> <code>scripts/new-benchmark-run.sh</code>: interactive
+picker over <code>opencode models</code>, generates a per-model workflow
+(model is static per workflow — peonmaxxer can't vary it per run yet),
+registers it in <code>peonmaxxer.yaml</code>, emits numbered tasks
+(<code>BENCH-&lt;run&gt;&lt;task&gt;</code>), copies scaffolds to
+<code>src/&lt;slug&gt;/r&lt;run&gt;/</code>, commits. Rerunnable by construction.</li>
+<li><strong>Workflow shape</strong> (10 steps): scaffold-check → implement →
+verify (goto-fix loop) → push → PR → fresh-session adversarial review
+(read-only, diff-fed, forced <code>REVIEW VERDICT:</code>) → apply fixes → verify →
+push → PR update.</li>
+<li><strong>PR stats convention</strong>: line 1 = model · locality · harness · time ·
+tokens; <code>scripts/stamp-pr-stats.sh</code> fills time/tokens from the core's
+API post-run (the workflow template context exposes no run stats).</li>
+</ul>
+
+<h2>3. Architecture overview</h2>
+<p>A consumer project of peonmaxxer-core: <code>peonmaxxer.yaml</code>
+(auto-activating backlog, gate protecting <code>src/benchmark/</code>, scripts and
+config), generated workflows in <code>.peonmaxxer/workflows/</code>, generated
+tasks in <code>.peonmaxxer/backlog/</code>. Verify gates keep caches in-tree
+(<code>.npmrc</code>, std-only Rust) so peonmaxxer's sandboxes can run them.</p>
+
+<h2>4. Problems to solve / known limitations</h2>
+<table>
+<tr><th>Item</th><th>Detail</th></tr>
+<tr><td>No run stats in PR templates</td><td>peonmaxxer's workflow template context has no model/tokens/duration; stats are stamped post-run by script. Candidate CORE task.</td></tr>
+<tr><td>Agent sandbox can't see /opt/homebrew</td><td>macOS seatbelt read allow-list lacks <code>/opt</code> (Linux bwrap has it), so agents can't run node/cargo in-session; tasks 2–3 lean on the verify→fix loop. Candidate CORE fix: admit /opt read-only.</td></tr>
+<tr><td>Model per workflow, not per run</td><td>Workflows pin the model statically; the generator works around it with one workflow per model.</td></tr>
+<tr><td>Rerun hygiene</td><td>Each run copies fresh scaffolds; merged PRs leave prior solutions in old run dirs (by design — history is the data).</td></tr>
+</table>
+
+<h2>5. Pending features (requested in conversation)</h2>
+<ul>
+<li>Unattended multi-model sweeps (queue several models' runs back-to-back).</li>
+<li>A results dashboard summarizing PR stat lines across runs.</li>
+</ul>
+
+<footer><p>Human-readable project memory. Last updated: 2026-08-30 — initial build-out (three tasks validated, generator + run 1 for muse-spark committed; awaiting first benchmark run).</p></footer>
+</body>
+</html>
