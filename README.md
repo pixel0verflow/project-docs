@@ -16,7 +16,7 @@ asked for that are still pending.
 |---------|--------|-----|
 | **iStorePull** — `ipatool` without auth | 🔵 Released (v0.2.1) | [open](https://pixel0verflow.github.io/project-docs/istorepull.html) |
 | **finbrake** — fund-load velocity limiter | 🔵 Complete | [open](https://pixel0verflow.github.io/project-docs/finbrake.html) |
-| **Specula** — visionOS video player | 🟢 Active | 🔒 private — doc lives in the project repo |
+| **Specula** — visionOS video player | 🟢 Active (3D Blu-ray (MVC) playback proven on device through the native player; streaming integration next, 2026-09-17) | 🔒 private — doc lives in the project repo |
 | **work-work-orc** — autonomous Claude Code orchestration | 🟢 Active (research) | [open](https://pixel0verflow.github.io/project-docs/work-work-orc.html) |
 | **Peonmaxxer** — self-hosted orchestrator for unattended AI coding agents | 🟢 Active (in progress — fleet headless, backlog being worked, 2026-09-09) | 🔒 private — doc lives in the project repo |
 | **peonmaxxer-testing-facility** — model benchmark for peonmaxxer (3 fixed tasks, PR-line stats) | 🟢 Active | [open](https://pixel0verflow.github.io/project-docs/peonmaxxer-testing-facility.html) |
