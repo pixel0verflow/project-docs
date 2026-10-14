@@ -9,7 +9,7 @@
 <body>
 
 <h1>specula-addons</h1>
-<p class="tagline">First-party add-on manifests for the Specula player, with a schema and a validator · <span class="status">🟢 Active (scaffold awaiting the owner's review and first push, 2026-10-14)</span></p>
+<p class="tagline">First-party add-on manifests for the Specula player, with a schema and a validator · <span class="status">🔵 Released (main at e073bc4, served by Pages, 2026-10-14)</span></p>
 <p>Repo: <a href="https://github.com/thirdshift-inc/specula-addons">github.com/thirdshift-inc/specula-addons</a> (public, MIT)</p>
 
 <h2>1. Problem statement — why?</h2>
@@ -44,16 +44,12 @@ first-party rules, and a GitHub Pages site that serves them.</p>
 
 <h2>4. Problems to solve / known limitations</h2>
 <ul>
-  <li>The first Pages run on <code>main</code> fails until Pages is switched on with
-      <em>GitHub Actions</em> as its source; it then needs one manual run.</li>
   <li>The schema has no <code>specula.discovery</code>; it is added only if a first-party
       add-on ever needs it.</li>
 </ul>
 
 <h2>5. Pending features requested by the user</h2>
 <ul>
-  <li>Publish: <code>scaffold</code> → PR → <code>main</code> (owner reviews and merges), then
-      Pages switched on and the Trending manifest served byte for byte.</li>
   <li>A first-party subtitles add-on (to be scoped).</li>
 </ul>
 
