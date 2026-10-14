@@ -9,7 +9,7 @@
 <body>
 
 <h1>specula-index</h1>
-<p class="tagline">A weekly film and series title index built from Wikidata, published as release assets · <span class="status">🟢 Active (first build refused; fix awaiting review, 2026-10-14)</span></p>
+<p class="tagline">A weekly film and series title index built from Wikidata, published as release assets · <span class="status">🔵 Released (index-2026-10-14 from main 54b9010)</span></p>
 <p>Repo: <a href="https://github.com/thirdshift-inc/specula-index">github.com/thirdshift-inc/specula-index</a> (public, MIT; data CC0 from Wikidata)</p>
 
 <h2>1. Problem statement — why?</h2>
@@ -29,6 +29,7 @@ compact binary index, and publish it weekly for the app to download.</p>
       reverse postings in fame order.</li>
   <li><strong>Manifest</strong>: version, tag, build time, Wikidata snapshot, licence, attribution,
       and per pack sizes and SHA-256 (raw and gzip), row counts and key counts.</li>
+  <li>Wikidata "unknown value" statements (blank nodes) are dropped and counted per query.</li>
   <li>Adult titles excluded by class and genre; a real build is refused under 100,000 core
       records or a drop of more than 10 % from the previous release.</li>
   <li><strong>Workflows</strong>: weekly build and release (<code>index-&lt;date&gt;</code>, marked
@@ -43,17 +44,18 @@ compact binary index, and publish it weekly for the app to download.</p>
 <p>Python standard library only. A bundled fixture (<code>tests/fixture/raw</code>) builds
 deterministically for tests; <code>tests/packreader.py</code> reads both packs back.</p>
 
+<h2>First release</h2>
+<p><code>index-2026-10-14</code>, built by run 38610742477 from <code>54b9010</code>: 454,395 titles (369,569 films,
+84,826 series); core 52.4 MB raw / 24.7 MB gzip, details 40.7 MB / 18.9 MB.</p>
+
 <h2>4. Problems to solve / known limitations</h2>
 <ul>
   <li>A same-day rebuild fails on the existing <code>index-&lt;date&gt;</code> tag.</li>
-  <li>The first real build is also the first run of the newer SPARQL queries; an empty or failed
-      answer there is a builder finding.</li>
+  <li>QLever's Wikidata snapshot lags: the first release reads 2026-08-07.</li>
 </ul>
 
 <h2>5. Pending features requested by the user</h2>
 <ul>
-  <li>Land <code>fix/unknown-values</code> (Wikidata "unknown value" statements arrive as blank nodes and
-      refused the first build, run 38608889736), then run the build again and check the first release.</li>
 </ul>
 
 </body>
