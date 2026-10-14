@@ -32,7 +32,7 @@ compact binary index, and publish it weekly for the app to download.</p>
   <li>Adult titles excluded by class and genre; a real build is refused under 100,000 core
       records or a drop of more than 10 % from the previous release.</li>
   <li><strong>Workflows</strong>: weekly build and release (<code>index-&lt;date&gt;</code>, marked
-      latest, older releases pruned), a keep-alive job that re-enables the schedule, PR CI;
+      latest, the five newest kept), a keep-alive job that re-enables the schedule through the API instead of a heartbeat commit (owner's decision, 2026-10-14), PR CI;
       actions pinned to commits.</li>
 </ul>
 
@@ -46,9 +46,6 @@ deterministically for tests; <code>tests/packreader.py</code> reads both packs b
 <h2>4. Problems to solve / known limitations</h2>
 <ul>
   <li>A same-day rebuild fails on the existing <code>index-&lt;date&gt;</code> tag.</li>
-  <li>The scaffold keeps the schedule alive by re-enabling the workflow through the API instead of
-      a heartbeat commit; which of the two to keep is the owner's call.</li>
-  <li>The number of releases kept (workflow: 8) differs from the README draft (5).</li>
   <li>The first real build is also the first run of the newer SPARQL queries; an empty or failed
       answer there is a builder finding.</li>
   <li>The README is an untracked draft; the owner writes it.</li>
