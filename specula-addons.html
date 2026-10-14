@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>specula-addons — project doc</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>specula-addons</h1>
+<p class="tagline">First-party add-on manifests for the Specula player, with a schema and a validator · <span class="status">🟢 Active (scaffold awaiting the owner's review and first push, 2026-10-14)</span></p>
+<p>Repo: <a href="https://github.com/thirdshift-inc/specula-addons">github.com/thirdshift-inc/specula-addons</a> (public, MIT)</p>
+
+<h2>1. Problem statement — why?</h2>
+<p>Specula reads add-on manifests to draw rows on its Home screen. First-party add-ons need a
+public, stable address and a check that they never declare content (streams or catalogues).
+This repository holds those manifests, a JSON schema for them, a validator that enforces the
+first-party rules, and a GitHub Pages site that serves them.</p>
+
+<h2>2. Features</h2>
+<ul>
+  <li><strong>Trending manifest</strong> (<code>site/trending/manifest.json</code>,
+      id <code>sh.thirdshift.specula.trending</code>): a Home row of trending titles, filled by
+      the metadata providers the user set up in Specula; options for providers, media and window.</li>
+  <li><strong>JSON schema</strong> (<code>schema/manifest.schema.json</code>) checked by a small
+      in-repo checker that refuses any keyword or type it does not implement.</li>
+  <li><strong>Validator</strong> (<code>python -m addon_manifest.validate site</code>): ids under
+      <code>sh.thirdshift.</code>, no <code>stream</code> or <code>catalog</code> resource, no
+      catalogues, duplicate JSON keys refused, option and row cross-references checked.
+      <code>subtitles</code> and <code>meta</code> resources are allowed.</li>
+  <li><strong>CI</strong> on pull requests and branch pushes; a test that every workflow action
+      is pinned to a full commit id.</li>
+  <li><strong>Pages deploy</strong> on push to <code>main</code>: tests, validator, then the
+      <code>site/</code> directory is published.</li>
+</ul>
+
+<h2>3. Architecture overview</h2>
+<pre>site/&lt;addon&gt;/manifest.json ─▶ addon_manifest.validate ─▶ schema.Checker + first-party rules
+                                         │
+             .github/workflows/pages.yml ┴▶ upload-pages-artifact ─▶ deploy-pages
+             https://thirdshift-inc.github.io/specula-addons/&lt;addon&gt;/manifest.json</pre>
+<p>Python standard library only; no dependencies.</p>
+
+<h2>4. Problems to solve / known limitations</h2>
+<ul>
+  <li>The README is still a skeleton of headings; the owner writes it.</li>
+  <li>The first Pages run on <code>main</code> fails until Pages is switched on with
+      <em>GitHub Actions</em> as its source; it then needs one manual run.</li>
+  <li>The schema has no <code>specula.discovery</code>; it is added only if a first-party
+      add-on ever needs it.</li>
+</ul>
+
+<h2>5. Pending features requested by the user</h2>
+<ul>
+  <li>Publish: <code>scaffold</code> → PR → <code>main</code> (owner reviews and merges), then
+      Pages switched on and the Trending manifest served byte for byte.</li>
+  <li>A first-party subtitles add-on (to be scoped).</li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>specula-index — project doc</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>specula-index</h1>
+<p class="tagline">A weekly film and series title index built from Wikidata, published as release assets · <span class="status">🟢 Active (scaffold awaiting the owner's review and first push, 2026-10-14)</span></p>
+<p>Repo: <a href="https://github.com/thirdshift-inc/specula-index">github.com/thirdshift-inc/specula-index</a> (public, MIT; data CC0 from Wikidata)</p>
+
+<h2>1. Problem statement — why?</h2>
+<p>Specula needs to find a film or series by name, offline, and map it to IMDb, TMDB and TVDB ids
+without a commercial metadata licence. Wikidata is CC0, so a builder can query it, compile a
+compact binary index, and publish it weekly for the app to download.</p>
+
+<h2>2. Features</h2>
+<ul>
+  <li><strong>Builder</strong> (<code>python -m specula_index.build</code>): 30 SPARQL queries
+      against QLever's Wikidata endpoint, answers cached, then two packs and a manifest.</li>
+  <li><strong>Core pack</strong>: one record per title (Wikidata, IMDb, TMDB, TVDB ids, label,
+      year, kind, seasons, genres, fame from sitelinks), sorted search keys, word starts. Flags:
+      bit 0 id overflow, bit 1 <code>TMDB_OTHER_KIND</code> (a TMDB id taken from the other kind).</li>
+  <li><strong>Details pack</strong>: up to eight cast, directors, companies, broadcasters, series,
+      franchise, countries, running time, episodes; entities searchable by English name with
+      reverse postings in fame order.</li>
+  <li><strong>Manifest</strong>: version, tag, build time, Wikidata snapshot, licence, attribution,
+      and per pack sizes and SHA-256 (raw and gzip), row counts and key counts.</li>
+  <li>Adult titles excluded by class and genre; a real build is refused under 100,000 core
+      records or a drop of more than 10 % from the previous release.</li>
+  <li><strong>Workflows</strong>: weekly build and release (<code>index-&lt;date&gt;</code>, marked
+      latest, older releases pruned), a keep-alive job that re-enables the schedule, PR CI;
+      actions pinned to commits.</li>
+</ul>
+
+<h2>3. Architecture overview</h2>
+<pre>QLever SPARQL ─▶ extract.fetch_all (.qlever-cache/*.tsv) ─▶ extract.load (join, shape, drop adult)
+   ─▶ pack.core_pack / pack.details_pack (SPTI, format 1, little-endian) ─▶ gzip
+   ─▶ manifest.write (verify hashes) ─▶ floor.check ─▶ gh release create index-&lt;date&gt;</pre>
+<p>Python standard library only. A bundled fixture (<code>tests/fixture/raw</code>) builds
+deterministically for tests; <code>tests/packreader.py</code> reads both packs back.</p>
+
+<h2>4. Problems to solve / known limitations</h2>
+<ul>
+  <li>A same-day rebuild fails on the existing <code>index-&lt;date&gt;</code> tag.</li>
+  <li>The scaffold keeps the schedule alive by re-enabling the workflow through the API instead of
+      a heartbeat commit; which of the two to keep is the owner's call.</li>
+  <li>The number of releases kept (workflow: 8) differs from the README draft (5).</li>
+  <li>The first real build is also the first run of the newer SPARQL queries; an empty or failed
+      answer there is a builder finding.</li>
+  <li>The README is an untracked draft; the owner writes it.</li>
+</ul>
+
+<h2>5. Pending features requested by the user</h2>
+<ul>
+  <li>Publish: <code>scaffold</code> → PR → <code>main</code> (owner reviews and merges), then one
+      manual build run and the first release checked.</li>
+</ul>
+
+</body>
+</html>
