@@ -9,7 +9,7 @@
 <body>
 
 <h1>specula-index</h1>
-<p class="tagline">A weekly film and series title index built from Wikidata, published as release assets · <span class="status">🔵 Released (index-2026-10-14 from main 54b9010)</span></p>
+<p class="tagline">A weekly film and series title index built from Wikidata, published as release assets · <span class="status">🟡 Latest release index-2026-10-26; 11-02 build failed, fix on a branch</span></p>
 <p>Repo: <a href="https://github.com/thirdshift-inc/specula-index">github.com/thirdshift-inc/specula-index</a> (public, MIT; data CC0 from Wikidata)</p>
 
 <h2>1. Problem statement — why?</h2>
@@ -20,7 +20,9 @@ compact binary index, and publish it weekly for the app to download.</p>
 <h2>2. Features</h2>
 <ul>
   <li><strong>Builder</strong> (<code>python -m specula_index.build</code>): 30 SPARQL queries
-      against QLever's Wikidata endpoint, answers cached, then two packs and a manifest.</li>
+      against QLever's Wikidata endpoint, answers cached, then two packs and a manifest. On branch
+      <code>fix/qlever-rate-limit</code>, <code>label_original</code>, <code>cast</code> and
+      <code>duration</code> are each built from several smaller queries.</li>
   <li><strong>Core pack</strong>: one record per title (Wikidata, IMDb, TMDB, TVDB ids, label,
       year, kind, seasons, genres, fame from sitelinks), sorted search keys, word starts. Flags:
       bit 0 id overflow, bit 1 <code>TMDB_OTHER_KIND</code> (a TMDB id taken from the other kind).</li>
@@ -51,6 +53,24 @@ deterministically for tests; <code>tests/packreader.py</code> reads both packs b
 <h2>4. Problems to solve / known limitations</h2>
 <ul>
   <li>A same-day rebuild fails on the existing <code>index-&lt;date&gt;</code> tag.</li>
+  <li><strong>QLever 429s have two meanings</strong> (measured 2026-11-02). nginx: an HTML answer in
+      0.1 s after about 18–20 rapid requests, no <code>Retry-After</code>, cleared on retry after
+      15–30 s. QLever: a JSON answer after its fixed 30 s query limit, which needs an access token to
+      raise. Only the first is a rate limit.</li>
+  <li><strong>Silent truncation</strong>: a query timing out mid-answer keeps its HTTP 200 and ends in
+      an error line. <code>main</code> accepts that as complete. The branch retries it and never
+      caches it. Sizes in the three releases checked show none shipped.</li>
+  <li><strong>Build 2026-11-02 failed</strong> (run 41446430736): <code>label_original</code> timed
+      out; <code>cast</code> and <code>duration</code> also time out on the
+      <code>wikibase:BestRank</code> join, cause on QLever's side unknown. Fix in commit
+      <code>b06f160</code>, branch not pushed; one full local build passed in 265 s (456,135
+      titles), CI not yet run. Timeouts get three quick attempts, not long backoff, to keep
+      Actions minutes low.</li>
+  <li>Asking <code>label_original</code> by fixed language changes about 65 of 297k rows against the
+      group form, probably a stale label index on recent items (unconfirmed). <code>label_en</code>
+      already uses that kind of filter.</li>
+  <li>Cast ordinals and duration units are now read from statements of any rank and matched to
+      best-rank values, so an ordinal from a lower-ranked statement of the same person can apply.</li>
   <li>QLever's Wikidata snapshot lags: the first release reads 2026-08-07.</li>
 </ul>
 
